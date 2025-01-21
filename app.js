@@ -87,7 +87,7 @@ function scheduleNotifications() {
     try {
         const now = new Date();
         const morningTime = new Date();
-        morningTime.setHours(9, 30, 0);
+        morningTime.setHours(9, 0, 0);
         const eveningTime = new Date();
         eveningTime.setHours(18, 0, 0);
 

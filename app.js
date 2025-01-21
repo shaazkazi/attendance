@@ -13,21 +13,32 @@ function scheduleNotifications() {
     const eveningTime = new Date();
     eveningTime.setHours(18, 0, 0);
     
+    function playNotificationSound() {
+        const audio = new Audio(NOTIFICATION_SOUND);
+        audio.play();
+    }
+
+    function createNotification(title, message) {
+        new Notification(title, {
+            body: message,
+            icon: 'icon512_rounded.png',
+            badge: 'icon512_rounded.png',
+            vibrate: [200, 100, 200],
+            silent: false
+        });
+        playNotificationSound();
+    }
+
     function scheduleNotification(time, message) {
         if (now > time) {
-            time.setDate(time.getDate() + 1); // Schedule for next day if time passed
+            time.setDate(time.getDate() + 1);
         }
         
         const timeUntilNotification = time.getTime() - now.getTime();
         
         setTimeout(() => {
-            new Notification('Attendance Reminder', {
-                body: message,
-                icon: 'icon512_rounded.png',
-                badge: 'icon512_rounded.png',
-                vibrate: [200, 100, 200]
-            });
-            scheduleNotification(time, message); // Reschedule for next day
+            createNotification('Attendance Reminder', message);
+            scheduleNotification(time, message);
         }, timeUntilNotification);
     }
     
@@ -69,3 +80,8 @@ if ('serviceWorker' in navigator) {
             console.log('❌ Service Worker registration failed:', error);
         });
 }
+
+// Add sound test functionality
+document.getElementById('testSound').addEventListener('click', () => {
+    createNotification('Sound Test', '🔊 Testing notification sound!');
+});

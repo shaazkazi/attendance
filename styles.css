@@ -174,3 +174,32 @@ button:hover {
     width: 100%; /* Make the container take full width */
     box-sizing: border-box; /* Include padding in width calculation */
 }
+/* Add these styles to your existing CSS */
+.footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    padding: 15px;
+    background: rgba(30, 30, 30, 0.8);
+    backdrop-filter: blur(10px);
+    z-index: 100;
+}
+
+.footer p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--dark-subtext);
+}
+
+.heart {
+    color: #ff4d4d;
+    display: inline-block;
+    animation: heartbeat 1.5s infinite;
+}
+
+@keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}

@@ -1,32 +1,28 @@
 const targetLocation = { lat: 25.2332593, lng: 51.4442569 }; // REDTAG Location
 const thresholdDistance = 50; // Threshold in meters for arrival/departure
-let hasEntered = false; // Track if "arrival" notification is sent
-let hasExited = false; // Track if "departure" notification is sent
+let hasEntered = false;
+let hasExited = false;
 
 const subscribeButton = document.getElementById('subscribe');
-const enableLocationButton = document.getElementById('enableLocation'); // New button for GPS tracking
+const enableLocationButton = document.getElementById('enableLocation');
+const testSoundButton = document.getElementById('testSound');
 const statusDiv = document.getElementById('status');
 
 // Utility to calculate distance between two GPS coordinates
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const toRad = (value) => (value * Math.PI) / 180;
-    const R = 6371e3; // Earth's radius in meters
-
+    const R = 6371e3;
     const φ1 = toRad(lat1);
     const φ2 = toRad(lat2);
     const Δφ = toRad(lat2 - lat1);
     const Δλ = toRad(lon2 - lon1);
-
     const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
               Math.cos(φ1) * Math.cos(φ2) *
               Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    return R * c; // Distance in meters
+    return R * c;
 }
 
-// Function to monitor location in real-time
 function enableLocationTracking() {
     if ('geolocation' in navigator) {
         navigator.geolocation.watchPosition((position) => {
@@ -44,10 +40,13 @@ function enableLocationTracking() {
             }
         }, (error) => {
             console.error('Error watching position:', error);
+            statusDiv.textContent = '⚠️ Error tracking location: ' + error.message;
+            statusDiv.className = 'status error';
+            statusDiv.style.display = 'block';
         }, {
-            enableHighAccuracy: true, // Use the most accurate GPS data
-            maximumAge: 0, // Don't use cached location
-            timeout: 10000 // Max time to wait for a response
+            enableHighAccuracy: true,
+            maximumAge: 0,
+            timeout: 10000
         });
 
         statusDiv.textContent = '📡 GPS tracking enabled! Notifications will be sent on arrival and departure.';
@@ -64,72 +63,66 @@ const NOTIFICATION_SOUND = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAA
 
 function playNotificationSound() {
     const audio = new Audio(NOTIFICATION_SOUND);
-    audio.volume = 1.0; // Set volume to maximum
-    const playPromise = audio.play();
+    audio.volume = 1.0;
+    return audio.play().catch(error => {
+        console.error("Error playing notification sound:", error);
+    });
+}
 
-    if (playPromise !== undefined) {
-        playPromise.catch(error => {
-            console.error("Error playing notification sound:", error);
-            // Retry playback in case of a browser restriction
-            setTimeout(() => audio.play(), 100);
+function createNotification(title, message) {
+    if (Notification.permission === 'granted') {
+        playNotificationSound();
+        return new Notification(title, {
+            body: message,
+            icon: 'icon512_rounded.png',
+            badge: 'icon512_rounded.png',
+            vibrate: [200, 100, 200],
+            silent: false,
+            requireInteraction: true
         });
     }
 }
 
-function createNotification(title, message) {
-    playNotificationSound(); // Play sound
-    return new Notification(title, {
-        body: message,
-        icon: 'icon512_rounded.png',
-        badge: 'icon512_rounded.png',
-        vibrate: [200, 100, 200],
-        silent: false,
-        requireInteraction: true // Keep the notification persistent
-    });
-}
-
-// Example usage:
-createNotification("Reminder", "This is your notification with sound!");
-
-// Schedule daily notifications
 function scheduleNotifications() {
-    const now = new Date();
+    try {
+        const now = new Date();
+        const morningTime = new Date();
+        morningTime.setHours(9, 30, 0);
+        const eveningTime = new Date();
+        eveningTime.setHours(18, 0, 0);
 
-    // Morning notification - 9:30 AM
-    const morningTime = new Date();
-    morningTime.setHours(9, 30, 0);
-
-    // Evening notification - 6:00 PM
-    const eveningTime = new Date();
-    eveningTime.setHours(18, 0, 0);
-
-    function scheduleNotification(time, message) {
-        if (now > time) {
-            time.setDate(time.getDate() + 1);
+        function scheduleNotification(time, message) {
+            if (now > time) {
+                time.setDate(time.getDate() + 1);
+            }
+            const timeUntilNotification = time.getTime() - now.getTime();
+            setTimeout(() => {
+                createNotification('Attendance Reminder', message);
+                scheduleNotification(time, message);
+            }, timeUntilNotification);
         }
 
-        const timeUntilNotification = time.getTime() - now.getTime();
-
-        setTimeout(() => {
-            createNotification('Attendance Reminder', message);
-            scheduleNotification(time, message);
-        }, timeUntilNotification);
+        scheduleNotification(morningTime, '🌅 Good morning! Time to mark your attendance for the day.');
+        scheduleNotification(eveningTime, '🌆 End of day! Don\'t forget to mark your exit time.');
+        
+        statusDiv.textContent = '⏰ Daily notifications scheduled for 9:30 AM and 6:00 PM';
+        statusDiv.style.display = 'block';
+        statusDiv.className = 'status success';
+    } catch (error) {
+        console.error('Scheduling error:', error);
+        statusDiv.textContent = '⚠️ Error scheduling notifications';
+        statusDiv.style.display = 'block';
+        statusDiv.className = 'status error';
     }
-
-    scheduleNotification(morningTime, '🌅 Good morning! Time to mark your attendance for the day.');
-    scheduleNotification(eveningTime, '🌆 End of day! Don\'t forget to mark your exit time.');
 }
 
-// Subscribe to notifications
 subscribeButton.addEventListener('click', async () => {
     if ('Notification' in window) {
         const permission = await Notification.requestPermission();
-
         if (permission === 'granted') {
             statusDiv.textContent = '✅ Notifications enabled! You\'ll be reminded at 9:30 AM and 6:00 PM.';
             statusDiv.style.display = 'block';
             statusDiv.className = 'status success';
-
             createNotification('Attendance Reminder', '🎉 Setup complete! Daily reminders are now active.');
             scheduleNotifications();
         } else {
@@ -140,14 +133,26 @@ subscribeButton.addEventListener('click', async () => {
     }
 });
 
-// Enable GPS tracking on button click
 enableLocationButton.addEventListener('click', () => {
     enableLocationTracking();
 });
 
-// Service worker registration
+testSoundButton.addEventListener('click', () => {
+    createNotification("Test", "This is a test notification with sound!");
+});
+
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/service-worker.js')
-        .then(() => console.log('✨ Service Worker registered successfully'))
-        .catch((error) => console.error('❌ Service Worker registration failed:', error));
-};
+        .then(registration => {
+            console.log('✨ Service Worker registered with scope:', registration.scope);
+            statusDiv.textContent = '✨ Service Worker registered successfully';
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status success';
+        })
+        .catch(error => {
+            console.error('❌ Service Worker registration failed:', error);
+            statusDiv.textContent = '❌ Service Worker registration failed';
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status error';
+        });
+}

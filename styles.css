@@ -203,3 +203,10 @@ button:hover {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.2); }
 }
+/* iOS-specific notification styles */
+@supports (-webkit-touch-callout: none) {
+    .notification {
+        -webkit-user-select: none;
+        user-select: none;
+    }
+}

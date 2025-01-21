@@ -83,38 +83,88 @@ function createNotification(title, message) {
     }
 }
 
+// Add these variables at the top
+let isPunchInDone = false;
+let isPunchOutDone = false;
+const REMINDER_INTERVAL = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+// Add these buttons to handle punch status
+const punchInDoneButton = document.getElementById('punchInDone');
+const punchOutDoneButton = document.getElementById('punchOutDone');
+
 function scheduleNotifications() {
-    try {
-        const now = new Date();
-        const morningTime = new Date();
-        morningTime.setHours(9, 0, 0);
-        const eveningTime = new Date();
-        eveningTime.setHours(18, 0, 0);
-
-        function scheduleNotification(time, message) {
-            if (now > time) {
-                time.setDate(time.getDate() + 1);
-            }
-            const timeUntilNotification = time.getTime() - now.getTime();
-            setTimeout(() => {
-                createNotification('Attendance Reminder', message);
-                scheduleNotification(time, message);
-            }, timeUntilNotification);
-        }
-
-        scheduleNotification(morningTime, '🌅 Good morning! Time to mark your attendance for the day.');
-        scheduleNotification(eveningTime, '🌆 End of day! Don\'t forget to mark your exit time.');
+    const now = new Date();
+    
+    // Morning punch-in window (9:00 AM to 9:30 AM)
+    const morningStartTime = new Date();
+    morningStartTime.setHours(9, 0, 0);
+    const morningEndTime = new Date();
+    morningEndTime.setHours(9, 30, 0);
+    
+    // Evening punch-out window (6:00 PM to 6:30 PM)
+    const eveningStartTime = new Date();
+    eveningStartTime.setHours(18, 0, 0);
+    const eveningEndTime = new Date();
+    eveningEndTime.setHours(18, 30, 0);
+    
+    function checkAndNotify() {
+        const currentTime = new Date();
         
-        statusDiv.textContent = '⏰ Daily notifications scheduled for 9:30 AM and 6:00 PM';
-        statusDiv.style.display = 'block';
-        statusDiv.className = 'status success';
-    } catch (error) {
-        console.error('Scheduling error:', error);
-        statusDiv.textContent = '⚠️ Error scheduling notifications';
-        statusDiv.style.display = 'block';
-        statusDiv.className = 'status error';
+        // Morning notifications
+        if (currentTime >= morningStartTime && 
+            currentTime <= morningEndTime && 
+            !isPunchInDone) {
+            createNotification(
+                'Punch-In Reminder', 
+                '⏰ Please punch in for your shift!'
+            );
+        }
+        
+        // Evening notifications
+        if (currentTime >= eveningStartTime && 
+            currentTime <= eveningEndTime && 
+            !isPunchOutDone) {
+            createNotification(
+                'Punch-Out Reminder', 
+                '⏰ Please punch out for your shift!'
+            );
+        }
+    }
+    
+    // Check every 5 minutes
+    setInterval(checkAndNotify, REMINDER_INTERVAL);
+    
+    // Initial check
+    checkAndNotify();
+}
+
+// Handle punch-in completion
+punchInDoneButton.addEventListener('click', () => {
+    isPunchInDone = true;
+    statusDiv.textContent = '✅ Punch-in recorded successfully';
+    statusDiv.style.display = 'block';
+    statusDiv.className = 'status success';
+});
+
+// Handle punch-out completion
+punchOutDoneButton.addEventListener('click', () => {
+    isPunchOutDone = true;
+    statusDiv.textContent = '✅ Punch-out recorded successfully';
+    statusDiv.style.display = 'block';
+    statusDiv.className = 'status success';
+});
+
+// Reset punch status at midnight
+function resetPunchStatus() {
+    const now = new Date();
+    if (now.getHours() === 0 && now.getMinutes() === 0) {
+        isPunchInDone = false;
+        isPunchOutDone = false;
     }
 }
+
+// Check punch status reset every minute
+setInterval(resetPunchStatus, 60000);
 
 subscribeButton.addEventListener('click', async () => {
     if ('Notification' in window) {
@@ -137,10 +187,35 @@ enableLocationButton.addEventListener('click', () => {
     enableLocationTracking();
 });
 
-testSoundButton.addEventListener('click', () => {
-    createNotification("Test", "This is a test notification with sound!");
+testSoundButton.addEventListener('click', async () => {
+    if (Notification.permission !== 'granted') {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+            statusDiv.textContent = '⚠️ Please allow notifications first';
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status error';
+            return;
+        }
+    }
+    
+    // Play sound and show notification with confirmation
+    try {
+        await playNotificationSound();
+        const notification = createNotification(
+            "Test Notification", 
+            "✅ Notifications are working correctly!"
+        );
+        
+        statusDiv.textContent = '🔔 Test notification sent successfully';
+        statusDiv.style.display = 'block';
+        statusDiv.className = 'status success';
+    } catch (error) {
+        console.error('Test notification error:', error);
+        statusDiv.textContent = '⚠️ Error sending test notification';
+        statusDiv.style.display = 'block';
+        statusDiv.className = 'status error';
+    }
 });
-
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/service-worker.js')
         .then(registration => {

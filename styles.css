@@ -165,3 +165,12 @@ button:hover {
     from { transform: translateY(10px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
+.buttons {
+    display: flex;
+    flex-direction: column; /* Align buttons vertically */
+    gap: 10px; /* Space between buttons */
+    padding: 20px; /* Padding around the buttons container */
+    max-width: 100%; /* Ensure container doesn't overflow */
+    width: 100%; /* Make the container take full width */
+    box-sizing: border-box; /* Include padding in width calculation */
+}

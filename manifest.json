@@ -19,7 +19,7 @@
     "display": "standalone",
     "dir": "auto",
     "lang": "en-GB",
-    "name": "Attendance Reminder",
+    "name": "Attendance",
     "short_name": "Attendance",
     "start_url": "/",
     "scope": "/",

@@ -13,29 +13,45 @@ function scheduleNotifications() {
     const eveningTime = new Date();
     eveningTime.setHours(18, 0, 0);
     
+    const NOTIFICATION_SOUND = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodHQqGlCN2Ca0dCmZ0A2Yq7i2apvRDhksOHWp21ENmS1492lbEI3Z7jo36NlQThmvOrfnWNAOGe/7OCSYz84aMHt4YxhPjhpw+7ghWA9OGrF7+CBXjw4a8fw4H5dOzhsyPHgeVs6OG3K8uB3Wjo4bsrz4HVaOThvzPTgdFk5OG/N9OBzWDk4cM714HJXODhxzvXgcVc4OHHO9eBwVjg4cs/24G9WODhz0PbgblU3OHTb+OhtVjc4dd754GxVNzh23/ngbFQ3OHfg+uBrUzc4eOH74GpTNjh54fvgaVI2OHri/OBpUjY4e+P84GhRNjh85PzgZ1E2OH3l/eBnUDU4fuX94GZQNTh/5v3gZU81OIDn/uBlTzU4gej+4GNONTWC6P7gYk41NoPp/+BhTjU2hOn/4GFNNTaF6v/gYE01Nobq/+BfTDU2h+v/4F5MNTaI7P/gXks1Nons/+BdSzU2iu3/4F1KNTaL7f/gXEo1No3u/+BbSjU2ju//4FpJNTaP7//gWUk1NpDv/+BZSDU2kfD/4FhINTaS8P/gWEc1NpPx/+BXRzU2lPH/4FZHNTaV8v/gVkY1Npby/+BVRjU2l/P/4FRGNTaY8//gVEU1Npnz/+BTRjU2mvT/4FJFNTab9P/gUkU1Npz1/+BRRjU2nfX/4FBGNTae9f/gUEU1Np/2/+BPRjU2oPb/4E5GNTah9v/gTkU1NqL3/+BNRjU2o/f/4E1FNTak+P/gTEU1NqX4/+BMRjU2pvj/4EtGNTan+P/gS0Y1Nqj5/+BKRjU2qfn/4EpFNTaq+f/gSUY1Nqv6/+BJRjU2rPr/4EhGNTat+v/gSEU1Nq77/+BHRjU2r/v/4EdFNTaw+//gRkY1NrH7/+BGRjU2svv/4EVGNTaz/P/gRUY1NrT8/+BERjU2tfz/4ERFNTa2/P/gQ0Y1Nrf9/+BDRjU2uP3/4EJGNTa5/f/gQkU1Nrr9/+BBRjU2u/3/4EFFNTa8/v/gQEY1Nr3+/+BARjU2vv7/4D9GNTY=';
+
     function playNotificationSound() {
         const audio = new Audio(NOTIFICATION_SOUND);
-        audio.play();
+        audio.volume = 1.0; // Maximum volume
+    
+        // Play the sound with both promise and traditional approach
+        const playPromise = audio.play();
+    
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                // Fallback to a different play method if needed
+                setTimeout(() => audio.play(), 100);
+            });
+        }
     }
 
     function createNotification(title, message) {
-        new Notification(title, {
+        // Play sound first
+        playNotificationSound();
+    
+        // Then show notification
+        return new Notification(title, {
             body: message,
             icon: 'icon512_rounded.png',
             badge: 'icon512_rounded.png',
             vibrate: [200, 100, 200],
-            silent: false
+            silent: false,
+            requireInteraction: true // Makes notification persist until user interacts
         });
-        playNotificationSound();
     }
 
     function scheduleNotification(time, message) {
         if (now > time) {
             time.setDate(time.getDate() + 1);
         }
-        
+    
         const timeUntilNotification = time.getTime() - now.getTime();
-        
+    
         setTimeout(() => {
             createNotification('Attendance Reminder', message);
             scheduleNotification(time, message);
@@ -81,7 +97,35 @@ if ('serviceWorker' in navigator) {
         });
 }
 
-// Add sound test functionality
-document.getElementById('testSound').addEventListener('click', () => {
-    createNotification('Sound Test', '🔊 Testing notification sound!');
+const testButton = document.getElementById('testSound');
+
+testButton.addEventListener('click', async () => {
+    if (Notification.permission === 'granted') {
+        createNotification('Sound Test', '🔊 Testing notification sound!');
+        statusDiv.textContent = '🔔 Test notification sent!';
+        statusDiv.style.display = 'block';
+        statusDiv.className = 'status success';
+    } else {
+        // If notifications aren't enabled yet, request permission first
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            createNotification('Sound Test', '🔊 Testing notification sound!');
+            statusDiv.textContent = '🔔 Test notification sent!';
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status success';
+        }
+    }
 });
+
+function createNotification(title, message) {
+    const notification = new Notification(title, {
+        body: message,
+        icon: 'icon512_rounded.png',
+        badge: 'icon512_rounded.png',
+        vibrate: [200, 100, 200],
+        silent: false
+    });
+    
+    // Play sound when notification is shown
+    playNotificationSound();
+}

@@ -92,63 +92,75 @@ const REMINDER_INTERVAL = 5 * 60 * 1000; // 5 minutes in milliseconds
 const punchInDoneButton = document.getElementById('punchInDone');
 const punchOutDoneButton = document.getElementById('punchOutDone');
 
-function scheduleNotifications() {
-    const now = new Date();
-    
-    // Morning punch-in window (9:00 AM to 9:30 AM)
-    const morningStartTime = new Date();
-    morningStartTime.setHours(9, 0, 0);
-    const morningEndTime = new Date();
-    morningEndTime.setHours(9, 30, 0);
-    
-    // Evening punch-out window (6:00 PM to 6:30 PM)
-    const eveningStartTime = new Date();
-    eveningStartTime.setHours(18, 0, 0);
-    const eveningEndTime = new Date();
-    eveningEndTime.setHours(18, 30, 0);
-    
-    function checkAndNotify() {
-        const currentTime = new Date();
+// Add these time-tracking variables
+let punchInInterval;
+let punchOutInterval;
+
+function startPunchInReminders() {
+    punchInInterval = setInterval(() => {
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
         
-        // Morning notifications
-        if (currentTime >= morningStartTime && 
-            currentTime <= morningEndTime && 
-            !isPunchInDone) {
+        if (currentHour === 9 && currentMinute >= 0 && currentMinute <= 30 && !isPunchInDone) {
             createNotification(
-                'Punch-In Reminder', 
-                '⏰ Please punch in for your shift!'
+                'Punch-In Reminder',
+                '⏰ Time to punch in! Current time: ' + now.toLocaleTimeString()
             );
         }
-        
-        // Evening notifications
-        if (currentTime >= eveningStartTime && 
-            currentTime <= eveningEndTime && 
-            !isPunchOutDone) {
-            createNotification(
-                'Punch-Out Reminder', 
-                '⏰ Please punch out for your shift!'
-            );
-        }
-    }
-    
-    // Check every 5 minutes
-    setInterval(checkAndNotify, REMINDER_INTERVAL);
-    
-    // Initial check
-    checkAndNotify();
+    }, 5 * 60 * 1000); // Every 5 minutes
 }
 
-// Handle punch-in completion
+function startPunchOutReminders() {
+    punchOutInterval = setInterval(() => {
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        
+        if (currentHour === 18 && currentMinute >= 0 && currentMinute <= 30 && !isPunchOutDone) {
+            createNotification(
+                'Punch-Out Reminder',
+                '⏰ Time to punch out! Current time: ' + now.toLocaleTimeString()
+            );
+        }
+    }, 5 * 60 * 1000); // Every 5 minutes
+}
+
+// Update the createNotification function for better cross-device support
+function createNotification(title, message) {
+    if (!('Notification' in window)) {
+        alert(message);
+        return;
+    }
+
+    const options = {
+        body: message,
+        icon: 'icon512_rounded.png',
+        badge: 'icon512_rounded.png',
+        vibrate: [200, 100, 200],
+        tag: 'attendance-reminder',
+        renotify: true,
+        requireInteraction: true
+    };
+
+    if (Notification.permission === 'granted') {
+        playNotificationSound();
+        return new Notification(title, options);
+    }
+}
+
+// Update punch button handlers
 punchInDoneButton.addEventListener('click', () => {
     isPunchInDone = true;
+    clearInterval(punchInInterval);
     statusDiv.textContent = '✅ Punch-in recorded successfully';
     statusDiv.style.display = 'block';
     statusDiv.className = 'status success';
 });
 
-// Handle punch-out completion
 punchOutDoneButton.addEventListener('click', () => {
     isPunchOutDone = true;
+    clearInterval(punchOutInterval);
     statusDiv.textContent = '✅ Punch-out recorded successfully';
     statusDiv.style.display = 'block';
     statusDiv.className = 'status success';
@@ -166,19 +178,16 @@ function resetPunchStatus() {
 // Check punch status reset every minute
 setInterval(resetPunchStatus, 60000);
 
+// Start reminders when notifications are enabled
 subscribeButton.addEventListener('click', async () => {
     if ('Notification' in window) {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-            statusDiv.textContent = '✅ Notifications enabled! You\'ll be reminded at 9:30 AM and 6:00 PM.';
+            startPunchInReminders();
+            startPunchOutReminders();
+            statusDiv.textContent = '✅ Notifications enabled! You\'ll be reminded every 5 minutes during punch windows.';
             statusDiv.style.display = 'block';
             statusDiv.className = 'status success';
-            createNotification('Attendance Reminder', '🎉 Setup complete! Daily reminders are now active.');
-            scheduleNotifications();
-        } else {
-            statusDiv.textContent = '⚠️ Please allow notifications to use this app.';
-            statusDiv.style.display = 'block';
-            statusDiv.className = 'status error';
         }
     }
 });
@@ -187,36 +196,34 @@ enableLocationButton.addEventListener('click', () => {
     enableLocationTracking();
 });
 
+// Update test notification handler
 testSoundButton.addEventListener('click', async () => {
-    if (Notification.permission !== 'granted') {
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') {
-            statusDiv.textContent = '⚠️ Please allow notifications first';
-            statusDiv.style.display = 'block';
-            statusDiv.className = 'status error';
-            return;
-        }
+    if (!('Notification' in window)) {
+        alert('Notifications not supported on this device');
+        return;
     }
-    
-    // Play sound and show notification with confirmation
+
     try {
-        await playNotificationSound();
-        const notification = createNotification(
-            "Test Notification", 
-            "✅ Notifications are working correctly!"
-        );
-        
-        statusDiv.textContent = '🔔 Test notification sent successfully';
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            await playNotificationSound();
+            createNotification(
+                'Test Notification',
+                '✅ Notifications are working! Time: ' + new Date().toLocaleTimeString()
+            );
+            statusDiv.textContent = '🔔 Test notification sent successfully';
+        } else {
+            statusDiv.textContent = '⚠️ Please allow notifications first';
+        }
         statusDiv.style.display = 'block';
-        statusDiv.className = 'status success';
+        statusDiv.className = permission === 'granted' ? 'status success' : 'status error';
     } catch (error) {
         console.error('Test notification error:', error);
-        statusDiv.textContent = '⚠️ Error sending test notification';
+        statusDiv.textContent = '⚠️ Error: ' + error.message;
         statusDiv.style.display = 'block';
         statusDiv.className = 'status error';
     }
-});
-if ('serviceWorker' in navigator) {
+});if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/service-worker.js')
         .then(registration => {
             console.log('✨ Service Worker registered with scope:', registration.scope);

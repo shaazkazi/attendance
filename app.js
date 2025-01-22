@@ -350,3 +350,32 @@ if ('serviceWorker' in navigator) {
             statusDiv.className = 'status error';
         });
 }
+
+document.getElementById('clearCache').addEventListener('click', async () => {
+    try {
+        // Clear all caches
+        const cacheKeys = await caches.keys();
+        await Promise.all(cacheKeys.map(key => caches.delete(key)));
+        
+        // Clear localStorage
+        localStorage.clear();
+        
+        // Unregister service workers
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map(reg => reg.unregister()));
+        
+        statusDiv.textContent = '✨ Cache cleared successfully! Reloading...';
+        statusDiv.style.display = 'block';
+        statusDiv.className = 'status success';
+        
+        // Reload the page after a brief delay
+        setTimeout(() => {
+            window.location.reload(true);
+        }, 1000);
+    } catch (error) {
+        console.error('Cache clearing error:', error);
+        statusDiv.textContent = '⚠️ Error clearing cache: ' + error.message;
+        statusDiv.style.display = 'block';
+        statusDiv.className = 'status error';
+    }
+});

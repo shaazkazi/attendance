@@ -258,3 +258,21 @@ button:hover {
     content: '⏰';
     margin-right: 8px;
 }
+#clearCache {
+    background: linear-gradient(135deg, #FF3636, #FF8936);
+    color: white;
+    padding: 12px 25px;
+    border-radius: 12px;
+    font-weight: 600;
+    margin: 10px auto;
+    display: block;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 54, 54, 0.2);
+    border: none;
+    cursor: pointer;
+}
+
+#clearCache::before {
+    content: '🧹';
+    margin-right: 8px;
+}

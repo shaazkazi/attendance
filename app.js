@@ -105,7 +105,7 @@ function playNotificationSound() {
     });
 }
 
-function createNotification(title, message) {
+async function createNotification(title, message) {
     if (!('Notification' in window)) {
         alert(message);
         return;
@@ -123,10 +123,17 @@ function createNotification(title, message) {
 
     if (Notification.permission === 'granted') {
         playNotificationSound();
-        return new Notification(title, options);
+        
+        // Check if service worker is active and use it for notifications
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            const registration = await navigator.serviceWorker.ready;
+            return registration.showNotification(title, options);
+        } else {
+            // Fallback for browsers that don't support service workers
+            return new Notification(title, options);
+        }
     }
-}
-  function startPunchInReminders() {
+}  function startPunchInReminders() {
       punchInInterval = setInterval(() => {
           const now = new Date();
           const [checkInHour, checkInMinute] = checkInTime.split(':').map(Number);

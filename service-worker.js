@@ -1,77 +1,96 @@
-const CACHE_VERSION = 'attendance-app-v2'; // Increment this when you update your app
+const CACHE_VERSION = 'attendance-app-v3';
+const CACHE_FILES = [
+    '/',
+    '/index.html',
+    '/styles.css',
+    '/app.js',
+    '/icon512_rounded.png',
+    '/icon512_maskable.png',
+    '/manifest.json'
+];
 
+// Install event - cache essential files
 self.addEventListener('install', (event) => {
-    console.log('Service Worker installed');
     event.waitUntil(
         caches.open(CACHE_VERSION).then((cache) => {
-            return cache.addAll([
-                '/',
-                '/index.html',
-                '/styles.css',
-                '/app.js',
-                '/icon512_rounded.png',
-                '/icon512_maskable.png',
-            ]);
+            return cache.addAll(CACHE_FILES);
         })
     );
+    self.skipWaiting();
 });
 
+// Activate event - clean old caches
 self.addEventListener('activate', (event) => {
-    console.log('Service Worker activated');
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames
                     .filter((cacheName) => cacheName !== CACHE_VERSION)
-                    .map((cacheName) => {
-                        console.log('Deleting old cache:', cacheName);
-                        return caches.delete(cacheName);
-                    })
+                    .map((cacheName) => caches.delete(cacheName))
             );
         })
     );
+    return self.clients.claim();
 });
 
-
+// Fetch event - network first, then cache
 self.addEventListener('fetch', (event) => {
-    // Serve cached assets if available
     event.respondWith(
-        caches.match(event.request).then((response) => {
-            return response || fetch(event.request);
-        })
+        fetch(event.request)
+            .then(response => {
+                const responseClone = response.clone();
+                caches.open(CACHE_VERSION)
+                    .then(cache => cache.put(event.request, responseClone));
+                return response;
+            })
+            .catch(() => caches.match(event.request))
     );
 });
 
+// Push event - handle notifications
 self.addEventListener('push', (event) => {
-    // Extract custom message from the push payload if available
-    const data = event.data ? event.data.json() : {};
-
     const options = {
-        body: data.body || 'Time to mark your attendance!',
-        icon: data.icon || 'icon512_rounded.png',
-        badge: data.badge || 'icon512_rounded.png',
+        body: event.data ? event.data.text() : 'Time to mark your attendance!',
+        icon: 'icon512_rounded.png',
+        badge: 'icon512_rounded.png',
         vibrate: [200, 100, 200],
+        tag: 'attendance-reminder',
+        renotify: true,
         actions: [
-            { action: 'mark-attendance', title: 'Mark Now' },
-            { action: 'snooze', title: 'Remind Me Later' }
-        ]
+            { action: 'dismiss', title: 'Dismiss' },
+            { action: 'check', title: 'Check Now' }
+        ],
+        data: {
+            timestamp: Date.now(),
+            url: self.location.origin
+        }
     };
 
     event.waitUntil(
-        self.registration.showNotification(data.title || 'Attendance Reminder', options)
+        self.registration.showNotification('Attendance Reminder', options)
     );
 });
 
+// Notification click event
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
 
-    // Handle custom actions
-    if (event.action === 'mark-attendance') {
-        clients.openWindow('/mark-attendance');
-    } else if (event.action === 'snooze') {
-        console.log('Snooze action clicked');
-    } else {
-        // Default action
-        clients.openWindow('/');
+    if (event.action === 'dismiss') {
+        return;
     }
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true })
+            .then(windowClients => {
+                if (windowClients.length > 0) {
+                    return windowClients[0].focus();
+                }
+                return clients.openWindow(event.notification.data.url || '/');
+            })
+    );
+});
+
+// Notification close event
+self.addEventListener('notificationclose', (event) => {
+    console.log('Notification was closed', event);
 });

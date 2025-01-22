@@ -31,6 +31,80 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return R * c;
 }
 
+const NOTIFICATION_SOUND = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodHQqGlCN2Ca0dCmZ0A2Yq7i2apvRDhksOHWp21ENmS1492lbEI3Z7jo36NlQThmvOrfnWNAOGe/7OCSYz84aMHt4YxhPjhpw+7ghWA9OGrF7+CBXjw4a8fw4H5dOzhsyPHgeVs6OG3K8uB3Wjo4bsrz4HVaOThvzPTgdFk5OG/N9OBzWDk4cM714HJXODhxzvXgcVc4OHHO9eBwVjg4cs/24G9WODhz0PbgblU3OHTb+OhtVjc4dd754GxVNzh23/ngbFQ3OHfg+uBrUzc4eOH74GpTNjh54fvgaVI2OHri/OBpUjY4e+P84GhRNjh85PzgZ1E2OH3l/eBnUDU4fuX94GZQNTh/5v3gZU81OIDn/uBlTzU4gej+4GNONTWC6P7gYk41NoPp/+BhTjU2hOn/4GFNNTaF6v/gYE01Nobq/+BfTDU2h+v/4F5MNTaI7P/gXks1Nons/+BdSzU2iu3/4F1KNTaL7f/gXEo1No3u/+BbSjU2ju//4FpJNTaP7//gWUk1NpDv/+BZSDU2kfD/4FhINTaS8P/gWEc1NpPx/+BXRzU2lPH/4FZHNTaV8v/gVkY1Npby/+BVRjU2l/P/4FRGNTaY8//gVEU1Npnz/+BTRjU2mvT/4FJFNTab9P/gUkU1Npz1/+BRRjU2nfX/4FBGNTae9f/gUEU1Np/2/+BPRjU2oPb/4E5GNTah9v/gTkU1NqL3/+BNRjU2o/f/4E1FNTak+P/gTEU1NqX4/+BMRjU2pvj/4EtGNTan+P/gS0Y1Nqj5/+BKRjU2qfn/4EpFNTaq+f/gSUY1Nqv6/+BJRjU2rPr/4EhGNTat+v/gSEU1Nq77/+BHRjU2r/v/4EdFNTaw+//gRkY1NrH7/+BGRjU2svv/4EVGNTaz/P/gRUY1NrT8/+BERjU2tfz/4ERFNTa2/P/gQ0Y1Nrf9/+BDRjU2uP3/4EJGNTa5/f/gQkU1Nrr9/+BBRjU2u/3/4EFFNTa8/v/gQEY1Nr3+/+BARjU2vv7/4D9GNTY=';
+
+async function playNotificationSound() {
+    const audio = new Audio(NOTIFICATION_SOUND);
+    audio.volume = 1.0;
+    try {
+        await audio.play();
+    } catch (error) {
+        console.log("Sound play failed, user interaction needed");
+    }
+}
+
+function getPlatform() {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    if (/android/i.test(userAgent)) {
+        return 'android';
+    }
+    if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+        return 'ios';
+    }
+    return 'web';
+}
+
+async function createNotification(title, message) {
+    if (!('Notification' in window)) {
+        alert(message);
+        return;
+    }
+
+    const platform = getPlatform();
+    
+    if (platform === 'ios') {
+        await window.Notification.requestPermission();
+    }
+
+    const options = {
+        body: message,
+        icon: 'icon512_rounded.png',
+        badge: 'icon512_rounded.png',
+        vibrate: [200, 100, 200],
+        tag: 'attendance-reminder',
+        renotify: true,
+        actions: [
+            {
+                action: 'dismiss',
+                title: 'Dismiss'
+            }
+        ],
+        data: {
+            timestamp: Date.now(),
+            url: window.location.href
+        }
+    };
+
+    if (Notification.permission === 'granted') {
+        try {
+            if (platform === 'ios') {
+                await playNotificationSound();
+            }
+            
+            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                const registration = await navigator.serviceWorker.ready;
+                await registration.showNotification(title, options);
+            } else {
+                await playNotificationSound();
+                new Notification(title, options);
+            }
+        } catch (error) {
+            console.error('Notification error:', error);
+            alert(`${title}: ${message}`);
+        }
+    }
+}
+
 function saveTimings() {
     const checkInInput = document.getElementById('checkInTime');
     const checkOutInput = document.getElementById('checkOutTime');
@@ -95,45 +169,7 @@ function startLocationWatch() {
         }
     );
 }
-const NOTIFICATION_SOUND = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodHQqGlCN2Ca0dCmZ0A2Yq7i2apvRDhksOHWp21ENmS1492lbEI3Z7jo36NlQThmvOrfnWNAOGe/7OCSYz84aMHt4YxhPjhpw+7ghWA9OGrF7+CBXjw4a8fw4H5dOzhsyPHgeVs6OG3K8uB3Wjo4bsrz4HVaOThvzPTgdFk5OG/N9OBzWDk4cM714HJXODhxzvXgcVc4OHHO9eBwVjg4cs/24G9WODhz0PbgblU3OHTb+OhtVjc4dd754GxVNzh23/ngbFQ3OHfg+uBrUzc4eOH74GpTNjh54fvgaVI2OHri/OBpUjY4e+P84GhRNjh85PzgZ1E2OH3l/eBnUDU4fuX94GZQNTh/5v3gZU81OIDn/uBlTzU4gej+4GNONTWC6P7gYk41NoPp/+BhTjU2hOn/4GFNNTaF6v/gYE01Nobq/+BfTDU2h+v/4F5MNTaI7P/gXks1Nons/+BdSzU2iu3/4F1KNTaL7f/gXEo1No3u/+BbSjU2ju//4FpJNTaP7//gWUk1NpDv/+BZSDU2kfD/4FhINTaS8P/gWEc1NpPx/+BXRzU2lPH/4FZHNTaV8v/gVkY1Npby/+BVRjU2l/P/4FRGNTaY8//gVEU1Npnz/+BTRjU2mvT/4FJFNTab9P/gUkU1Npz1/+BRRjU2nfX/4FBGNTae9f/gUEU1Np/2/+BPRjU2oPb/4E5GNTah9v/gTkU1NqL3/+BNRjU2o/f/4E1FNTak+P/gTEU1NqX4/+BMRjU2pvj/4EtGNTan+P/gS0Y1Nqj5/+BKRjU2qfn/4EpFNTaq+f/gSUY1Nqv6/+BJRjU2rPr/4EhGNTat+v/gSEU1Nq77/+BHRjU2r/v/4EdFNTaw+//gRkY1NrH7/+BGRjU2svv/4EVGNTaz/P/gRUY1NrT8/+BERjU2tfz/4ERFNTa2/P/gQ0Y1Nrf9/+BDRjU2uP3/4EJGNTa5/f/gQkU1Nrr9/+BBRjU2u/3/4EFFNTa8/v/gQEY1Nr3+/+BARjU2vv7/4D9GNTY=';
-
-function playNotificationSound() {
-    const audio = new Audio(NOTIFICATION_SOUND);
-    audio.volume = 1.0;
-    return audio.play().catch(error => {
-        console.error("Error playing notification sound:", error);
-    });
-}
-
-async function createNotification(title, message) {
-    if (!('Notification' in window)) {
-        alert(message);
-        return;
-    }
-
-    const options = {
-        body: message,
-        icon: 'icon512_rounded.png',
-        badge: 'icon512_rounded.png',
-        vibrate: [200, 100, 200],
-        tag: 'attendance-reminder',
-        renotify: true,
-        requireInteraction: true
-    };
-
-    if (Notification.permission === 'granted') {
-        playNotificationSound();
-        
-        // Check if service worker is active and use it for notifications
-        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-            const registration = await navigator.serviceWorker.ready;
-            return registration.showNotification(title, options);
-        } else {
-            // Fallback for browsers that don't support service workers
-            return new Notification(title, options);
-        }
-    }
-}  function startPunchInReminders() {
+function startPunchInReminders() {
       punchInInterval = setInterval(() => {
           const now = new Date();
           const [checkInHour, checkInMinute] = checkInTime.split(':').map(Number);
@@ -276,69 +312,3 @@ if ('serviceWorker' in navigator) {
             statusDiv.className = 'status error';
         });
 }
-
-function enableLocationTracking() {
-    if ('geolocation' in navigator) {
-        // First check if permissions need to be requested
-        navigator.permissions.query({ name: 'geolocation' }).then(result => {
-            if (result.state === 'denied') {
-                // Guide users to settings if permission was denied
-                statusDiv.textContent = '📍 Please enable location in your device settings to use this feature';
-                statusDiv.style.display = 'block';
-                statusDiv.className = 'status error';
-            } else {
-                // Start tracking if permission is granted or prompt if not yet set
-                startLocationWatch();
-            }
-        });
-    } else {
-        statusDiv.textContent = '⚠️ GPS tracking is not supported on your device.';
-        statusDiv.style.display = 'block';
-        statusDiv.className = 'status error';
-    }
-}
-document.getElementById('clearCache').addEventListener('click', async () => {
-    try {
-        // Clear all caches
-        const cacheKeys = await caches.keys();
-        await Promise.all(cacheKeys.map(key => caches.delete(key)));
-        
-        // Clear localStorage
-        localStorage.clear();
-        
-        // Unregister service workers
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(registrations.map(reg => reg.unregister()));
-        
-        statusDiv.textContent = '✨ Cache cleared successfully! Reloading...';
-        statusDiv.style.display = 'block';
-        statusDiv.className = 'status success';
-        
-        // Reload the page after a brief delay
-        setTimeout(() => {
-            window.location.reload(true);
-        }, 1000);
-    } catch (error) {
-        console.error('Cache clearing error:', error);
-        statusDiv.textContent = '⚠️ Error clearing cache: ' + error.message;
-        statusDiv.style.display = 'block';
-        statusDiv.className = 'status error';
-    }
-});
-
-function updateClock() {
-    const clockElement = document.getElementById('liveClock');
-    const now = new Date();
-    const timeOptions = { 
-        hour: 'numeric', 
-        minute: '2-digit', 
-        second: '2-digit', 
-        hour12: true 
-    };
-    clockElement.textContent = now.toLocaleTimeString('en-US', timeOptions);
-}
-
-// Update clock every second
-setInterval(updateClock, 1000);
-// Initial call to avoid delay
-updateClock();

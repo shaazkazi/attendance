@@ -126,36 +126,39 @@ function createNotification(title, message) {
         return new Notification(title, options);
     }
 }
-
-function startPunchInReminders() {
-    punchInInterval = setInterval(() => {
-        const now = new Date();
-        const [checkInHour, checkInMinute] = checkInTime.split(':').map(Number);
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
+  function startPunchInReminders() {
+      punchInInterval = setInterval(() => {
+          const now = new Date();
+          const [checkInHour, checkInMinute] = checkInTime.split(':').map(Number);
+          const currentHour = now.getHours();
+          const currentMinute = now.getMinutes();
         
-        if (currentHour === checkInHour && 
-            currentMinute >= 0 && 
-            currentMinute <= 30 && 
-            !isPunchInDone && 
-            currentMinute % 1 === 0) { // Notify every 1 minutes
-            createNotification(
-                'Punch-In Reminder',
-                `⏰ Time to punch in! Current time: ${now.toLocaleTimeString()}`
-            );
-        }
-    }, 60000); // Check every minute
-}function startPunchOutReminders() {
+          // Notify exactly at check-in time and then every minute for 30 minutes if not punched in
+          if (currentHour === checkInHour && 
+              ((currentMinute === checkInMinute) || // Exact time notification
+              (currentMinute > checkInMinute && 
+             currentMinute <= checkInMinute + 30 && 
+             !isPunchInDone))) {
+              createNotification(
+                  'Punch-In Reminder',
+                  `⏰ Time to punch in! Current time: ${now.toLocaleTimeString()}`
+              );
+          }
+      }, 60000); // Check every minute
+}
+function startPunchOutReminders() {
     punchOutInterval = setInterval(() => {
         const now = new Date();
         const [checkOutHour, checkOutMinute] = checkOutTime.split(':').map(Number);
         const currentHour = now.getHours();
         const currentMinute = now.getMinutes();
         
+        // Notify exactly at check-out time and then every minute for 30 minutes if not punched out
         if (currentHour === checkOutHour && 
-            currentMinute >= 0 && 
-            currentMinute <= 30 && 
-            !isPunchOutDone) {
+            ((currentMinute === checkOutMinute) || // Exact time notification
+            (currentMinute > checkOutMinute && 
+             currentMinute <= checkOutMinute + 30 && 
+             !isPunchOutDone))) {
             createNotification(
                 'Punch-Out Reminder',
                 `⏰ Time to punch out! Current time: ${now.toLocaleTimeString()}`

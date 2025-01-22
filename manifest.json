@@ -1,54 +1,49 @@
-  {
-    "theme_color": "#8936FF",
-    "background_color": "#2EC6FE",
-    "icons": [
+{
+  "theme_color": "#8936FF",
+  "background_color": "#2EC6FE",
+  "icons": [
       {
-        "purpose": "maskable",
-        "sizes": "512x512",
-        "src": "icon512_maskable.png",
-        "type": "image/png"
+          "purpose": "maskable",
+          "sizes": "512x512",
+          "src": "icon512_maskable.png",
+          "type": "image/png"
       },
       {
-        "purpose": "any",
-        "sizes": "512x512",
-        "src": "icon512_rounded.png",
-        "type": "image/png"
+          "purpose": "any",
+          "sizes": "512x512",
+          "src": "icon512_rounded.png",
+          "type": "image/png"
       }
-    ],
-    "orientation": "portrait",
-    "display": "standalone",
-    "dir": "auto",
-    "lang": "en-GB",
-    "name": "Attendance",
-    "short_name": "Attendance",
-    "start_url": "/",
-    "scope": "/",
-    "description": "Attendance Reminder",
-    "id": "/",
-    "categories": ["productivity", "utilities"],
-    "shortcuts": [
+  ],
+  "orientation": "portrait",
+  "display": "standalone",
+  "dir": "auto",
+  "lang": "en-GB",
+  "name": "Attendance",
+  "short_name": "Attendance",
+  "start_url": "/",
+  "scope": "/",
+  "description": "Attendance Reminder",
+  "id": "/",
+  "categories": ["productivity", "utilities"],
+  "shortcuts": [
       {
-        "name": "Mark Attendance",
-        "url": "/mark-attendance",
-        "description": "Quickly mark your attendance"
+          "name": "Mark Attendance",
+          "url": "/mark-attendance",
+          "description": "Quickly mark your attendance"
       }
-    ],
-    "related_applications": [],
-    "prefer_related_applications": false,
-    "notifications": {
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "notifications": {
       "vibrate": [200, 100, 200]
-    },
-    "background_location": true,
-    "permissions": ["geolocation"],
-    "ios_background_location": {
+  },
+  "permissions": ["geolocation", "notifications"],
+  "background_fetch": {
+      "enable": true
+  },
+  "background_location": {
       "required": true,
       "description": "This app needs your location to track attendance at REDTAG"
-    }
   }
-
-{
-    "background": {
-        "scripts": ["service-worker.js"],
-        "persistent": true
-    }
 }

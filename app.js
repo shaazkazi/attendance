@@ -1,4 +1,4 @@
-const targetLocation = { lat: 25.2332593, lng: 51.4442569 }; // REDTAG Location
+const targetLocation = { lat: 25.233414606314444, lng: 51.446510877881586 }; // REDTAG Location
 const thresholdDistance = 50; // Threshold in meters for arrival/departure
 let hasEntered = false;
 let hasExited = false;

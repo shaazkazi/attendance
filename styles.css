@@ -210,3 +210,52 @@ button:hover {
         user-select: none;
     }
 }
+.time-card input[type="time"] {
+    background: transparent;
+    border: 1px solid var(--secondary);
+    border-radius: 8px;
+    color: var(--dark-text);
+    padding: 8px;
+    font-size: 1.2rem;
+    width: 100%;
+    margin-top: 8px;
+}
+
+#saveTimings {
+    background: linear-gradient(135deg, var(--secondary), var(--primary));
+    color: white;
+    margin-top: 15px;
+}
+.time-card {
+    position: relative;
+}
+
+#saveTimings {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: var(--dark-text);
+    padding: 12px 25px;
+    border-radius: 12px;
+    font-weight: 600;
+    margin: 20px auto;
+    display: block;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(137, 54, 255, 0.2);
+    border: none;
+    cursor: pointer;
+    animation: gradientFlow 8s linear infinite;
+    background-size: 200% 200%;
+}
+
+#saveTimings:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(137, 54, 255, 0.4);
+}
+
+#saveTimings:active {
+    transform: translateY(1px);
+}
+
+#saveTimings::before {
+    content: '⏰';
+    margin-right: 8px;
+}

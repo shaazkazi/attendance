@@ -1,9 +1,9 @@
+const CACHE_VERSION = 'attendance-app-v2'; // Increment this when you update your app
+
 self.addEventListener('install', (event) => {
     console.log('Service Worker installed');
-
-    // Cache assets for offline use
     event.waitUntil(
-        caches.open('attendance-app-v1').then((cache) => {
+        caches.open(CACHE_VERSION).then((cache) => {
             return cache.addAll([
                 '/',
                 '/index.html',
@@ -18,16 +18,20 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
     console.log('Service Worker activated');
-
-    // Clean up old caches
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
-                cacheNames.filter((cacheName) => cacheName !== 'attendance-app-v1').map((cacheName) => caches.delete(cacheName))
+                cacheNames
+                    .filter((cacheName) => cacheName !== CACHE_VERSION)
+                    .map((cacheName) => {
+                        console.log('Deleting old cache:', cacheName);
+                        return caches.delete(cacheName);
+                    })
             );
         })
     );
 });
+
 
 self.addEventListener('fetch', (event) => {
     // Serve cached assets if available

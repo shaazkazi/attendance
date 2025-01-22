@@ -264,3 +264,24 @@ if ('serviceWorker' in navigator) {
             statusDiv.className = 'status error';
         });
 }
+
+function enableLocationTracking() {
+    if ('geolocation' in navigator) {
+        // First check if permissions need to be requested
+        navigator.permissions.query({ name: 'geolocation' }).then(result => {
+            if (result.state === 'denied') {
+                // Guide users to settings if permission was denied
+                statusDiv.textContent = '📍 Please enable location in your device settings to use this feature';
+                statusDiv.style.display = 'block';
+                statusDiv.className = 'status error';
+            } else {
+                // Start tracking if permission is granted or prompt if not yet set
+                startLocationWatch();
+            }
+        });
+    } else {
+        statusDiv.textContent = '⚠️ GPS tracking is not supported on your device.';
+        statusDiv.style.display = 'block';
+        statusDiv.className = 'status error';
+    }
+}

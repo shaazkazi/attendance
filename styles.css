@@ -242,7 +242,6 @@ button:hover {
     box-shadow: 0 4px 15px rgba(137, 54, 255, 0.2);
     border: none;
     cursor: pointer;
-    animation: gradientFlow 8s linear infinite;
     background-size: 200% 200%;
 }
 

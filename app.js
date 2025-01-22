@@ -35,14 +35,27 @@ function saveTimings() {
     const checkInInput = document.getElementById('checkInTime');
     const checkOutInput = document.getElementById('checkOutTime');
     
+    // Clear old timings first
+    clearInterval(punchInInterval);
+    clearInterval(punchOutInterval);
+    
     checkInTime = checkInInput.value;
     checkOutTime = checkOutInput.value;
+    
+    // Reset punch status when new times are set
+    isPunchInDone = false;
+    isPunchOutDone = false;
     
     localStorage.setItem('checkInTime', checkInTime);
     localStorage.setItem('checkOutTime', checkOutTime);
     
-    clearInterval(punchInInterval);
-    clearInterval(punchOutInterval);
+    // Send immediate notification to confirm save
+    createNotification(
+        'Times Saved Successfully',
+        `✅ New timings set - Check-in: ${checkInTime}, Check-out: ${checkOutTime}`
+    );
+    
+    // Start new reminder intervals
     startPunchInReminders();
     startPunchOutReminders();
     
@@ -50,7 +63,6 @@ function saveTimings() {
     statusDiv.style.display = 'block';
     statusDiv.className = 'status success';
 }
-
 function startLocationWatch() {
     const distanceDisplay = document.getElementById('distanceDisplay');
     

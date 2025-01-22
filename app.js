@@ -145,7 +145,6 @@ function startLocationWatch() {
             const { latitude, longitude } = position.coords;
             const distance = calculateDistance(latitude, longitude, targetLocation.lat, targetLocation.lng);
             
-            // Update distance display
             distanceDisplay.textContent = `📍 Distance from REDTAG: ${Math.round(distance)} meters`;
             
             if (distance <= thresholdDistance && !hasEntered) {
@@ -164,11 +163,34 @@ function startLocationWatch() {
         },
         {
             enableHighAccuracy: true,
-            maximumAge: 300000, // 5 minutes
+            maximumAge: 300000,
             timeout: 10000
         }
     );
 }
+
+function enableLocationTracking() {
+    if ('geolocation' in navigator) {
+        navigator.permissions.query({ name: 'geolocation' }).then(result => {
+            if (result.state === 'denied') {
+                statusDiv.textContent = '📍 Please enable location in your device settings to use this feature';
+                statusDiv.style.display = 'block';
+                statusDiv.className = 'status error';
+            } else {
+                startLocationWatch();
+            }
+        });
+    } else {
+        statusDiv.textContent = '⚠️ GPS tracking is not supported on your device.';
+        statusDiv.style.display = 'block';
+        statusDiv.className = 'status error';
+    }
+}
+
+// Make sure this event listener is present
+enableLocationButton.addEventListener('click', () => {
+    enableLocationTracking();
+});
 function startPunchInReminders() {
       punchInInterval = setInterval(() => {
           const now = new Date();

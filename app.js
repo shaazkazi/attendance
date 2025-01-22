@@ -52,16 +52,16 @@ function saveTimings() {
 }
 
 function startLocationWatch() {
-    hasEntered = false;
-    hasExited = false;
-
+    const distanceDisplay = document.getElementById('distanceDisplay');
+    
     const watchId = navigator.geolocation.watchPosition(
         (position) => {
             const { latitude, longitude } = position.coords;
             const distance = calculateDistance(latitude, longitude, targetLocation.lat, targetLocation.lng);
             
-            console.log('Distance from REDTAG:', Math.round(distance), 'meters');
-
+            // Update distance display
+            distanceDisplay.textContent = `📍 Distance from REDTAG: ${Math.round(distance)} meters`;
+            
             if (distance <= thresholdDistance && !hasEntered) {
                 hasEntered = true;
                 hasExited = false;
@@ -74,24 +74,15 @@ function startLocationWatch() {
             }
         },
         (error) => {
-            statusDiv.textContent = '📍 Location access needed: Please check your device settings';
-            statusDiv.style.display = 'block';
-            statusDiv.className = 'status error';
+            distanceDisplay.textContent = '📍 Location access needed';
         },
         {
             enableHighAccuracy: true,
-            maximumAge: 0,
+            maximumAge: 300000, // 5 minutes
             timeout: 10000
         }
     );
-
-    statusDiv.textContent = '📡 Location tracking active - Range: 50 meters';
-    statusDiv.style.display = 'block';
-    statusDiv.className = 'status success';
-    
-    return watchId;
 }
-
 const NOTIFICATION_SOUND = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodHQqGlCN2Ca0dCmZ0A2Yq7i2apvRDhksOHWp21ENmS1492lbEI3Z7jo36NlQThmvOrfnWNAOGe/7OCSYz84aMHt4YxhPjhpw+7ghWA9OGrF7+CBXjw4a8fw4H5dOzhsyPHgeVs6OG3K8uB3Wjo4bsrz4HVaOThvzPTgdFk5OG/N9OBzWDk4cM714HJXODhxzvXgcVc4OHHO9eBwVjg4cs/24G9WODhz0PbgblU3OHTb+OhtVjc4dd754GxVNzh23/ngbFQ3OHfg+uBrUzc4eOH74GpTNjh54fvgaVI2OHri/OBpUjY4e+P84GhRNjh85PzgZ1E2OH3l/eBnUDU4fuX94GZQNTh/5v3gZU81OIDn/uBlTzU4gej+4GNONTWC6P7gYk41NoPp/+BhTjU2hOn/4GFNNTaF6v/gYE01Nobq/+BfTDU2h+v/4F5MNTaI7P/gXks1Nons/+BdSzU2iu3/4F1KNTaL7f/gXEo1No3u/+BbSjU2ju//4FpJNTaP7//gWUk1NpDv/+BZSDU2kfD/4FhINTaS8P/gWEc1NpPx/+BXRzU2lPH/4FZHNTaV8v/gVkY1Npby/+BVRjU2l/P/4FRGNTaY8//gVEU1Npnz/+BTRjU2mvT/4FJFNTab9P/gUkU1Npz1/+BRRjU2nfX/4FBGNTae9f/gUEU1Np/2/+BPRjU2oPb/4E5GNTah9v/gTkU1NqL3/+BNRjU2o/f/4E1FNTak+P/gTEU1NqX4/+BMRjU2pvj/4EtGNTan+P/gS0Y1Nqj5/+BKRjU2qfn/4EpFNTaq+f/gSUY1Nqv6/+BJRjU2rPr/4EhGNTat+v/gSEU1Nq77/+BHRjU2r/v/4EdFNTaw+//gRkY1NrH7/+BGRjU2svv/4EVGNTaz/P/gRUY1NrT8/+BERjU2tfz/4ERFNTa2/P/gQ0Y1Nrf9/+BDRjU2uP3/4EJGNTa5/f/gQkU1Nrr9/+BBRjU2u/3/4EFFNTa8/v/gQEY1Nr3+/+BARjU2vv7/4D9GNTY=';
 
 function playNotificationSound() {
@@ -134,16 +125,15 @@ function startPunchInReminders() {
         if (currentHour === checkInHour && 
             currentMinute >= 0 && 
             currentMinute <= 30 && 
-            !isPunchInDone) {
+            !isPunchInDone && 
+            currentMinute % 1 === 0) { // Notify every 1 minutes
             createNotification(
                 'Punch-In Reminder',
                 `⏰ Time to punch in! Current time: ${now.toLocaleTimeString()}`
             );
         }
-    }, 60000);
-}
-
-function startPunchOutReminders() {
+    }, 60000); // Check every minute
+}function startPunchOutReminders() {
     punchOutInterval = setInterval(() => {
         const now = new Date();
         const [checkOutHour, checkOutMinute] = checkOutTime.split(':').map(Number);
@@ -313,3 +303,20 @@ document.getElementById('clearCache').addEventListener('click', async () => {
         statusDiv.className = 'status error';
     }
 });
+
+function updateClock() {
+    const clockElement = document.getElementById('liveClock');
+    const now = new Date();
+    const timeOptions = { 
+        hour: 'numeric', 
+        minute: '2-digit', 
+        second: '2-digit', 
+        hour12: true 
+    };
+    clockElement.textContent = now.toLocaleTimeString('en-US', timeOptions);
+}
+
+// Update clock every second
+setInterval(updateClock, 1000);
+// Initial call to avoid delay
+updateClock();

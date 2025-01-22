@@ -240,6 +240,18 @@ function resetPunchStatus() {
     }
 }
 
+function updateClock() {
+    const clockElement = document.getElementById('liveClock');
+    const now = new Date();
+    const timeOptions = { 
+        hour: 'numeric', 
+        minute: '2-digit', 
+        second: '2-digit', 
+        hour12: true 
+    };
+    clockElement.textContent = now.toLocaleTimeString('en-US', timeOptions);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const savedCheckIn = localStorage.getItem('checkInTime');
     const savedCheckOut = localStorage.getItem('checkOutTime');
@@ -252,6 +264,10 @@ document.addEventListener('DOMContentLoaded', () => {
         checkOutTime = savedCheckOut;
         document.getElementById('checkOutTime').value = savedCheckOut;
     }
+
+    // Start the live clock
+    setInterval(updateClock, 1000);
+    updateClock(); // Initial call to avoid delay
 });
 
 subscribeButton.addEventListener('click', async () => {
